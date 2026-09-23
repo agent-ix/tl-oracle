@@ -8,7 +8,7 @@ description = "Development-only independent reference semantics for TL"
 license = "MIT"
 
 [dependencies]
-tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "43dcd3646d14922e20dee1be17b258be00ebf027", features = ["alloc", "serde"] }
+tl-syntax = { version = "=0.4.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "08c23fa319a0ed2cf4535367b3670aa1f2033acd", features = ["alloc", "serde"] }
 thiserror = "2"
 
 [lints.rust]
