@@ -62,7 +62,7 @@ dependencies = [
 [[package]]
 name = "tl-syntax"
 version = "0.3.0"
-source = "git+https://github.com/agent-ix/tl-syntax.git?rev=75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3#75ebec8ec8d15dcdee3a821119ae3ceb18e61bb3"
+source = "git+https://github.com/agent-ix/tl-syntax.git?rev=a42c3a26f20b048e4f0583958c130aa0e206efee#a42c3a26f20b048e4f0583958c130aa0e206efee"
 
 [[package]]
 name = "unicode-ident"
