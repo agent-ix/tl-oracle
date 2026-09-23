@@ -310,6 +310,60 @@ fn tc_194_refusals_and_limits_do_not_prove() {
     );
 }
 
+/// TC-188, FR-049-AC-2: each oracle admission limit has a positive boundary
+/// and a typed one-over refusal on the same real evaluation path.
+#[test]
+fn tc_188_oracle_limit_edges_are_typed() {
+    let word = Lasso::new(vec![], vec![cell(&[(0, Evidence::Missing)])]).unwrap();
+    let exact = Limits {
+        max_depth: 1,
+        max_positions: 1,
+        max_completions: 2,
+        ..Limits::default()
+    };
+    let admitted = evaluate(&atom(0), &[], &word, 0, exact).unwrap();
+    assert_eq!(admitted.fair_completions, 2);
+    for limited in [
+        Limits {
+            max_depth: 0,
+            ..exact
+        },
+        Limits {
+            max_positions: 0,
+            ..exact
+        },
+        Limits {
+            max_completions: 1,
+            ..exact
+        },
+    ] {
+        assert_eq!(
+            evaluate(&atom(0), &[], &word, 0, limited),
+            Err(OracleError::ResourceIncomplete)
+        );
+    }
+    let future = F::Future(I::Closed { start: 1, end: 1 }, Box::new(atom(0)));
+    let bounded = Limits {
+        max_depth: 2,
+        max_offset: 1,
+        ..exact
+    };
+    assert!(evaluate(&future, &[], &word, 0, bounded).is_ok());
+    assert_eq!(
+        evaluate(
+            &future,
+            &[],
+            &word,
+            0,
+            Limits {
+                max_offset: 0,
+                ..bounded
+            }
+        ),
+        Err(OracleError::ResourceIncomplete)
+    );
+}
+
 /// TC-194, FR-053-AC-2: shared syntax DAG expansion stays resource bounded.
 #[test]
 fn tc_194_graph_expansion_budget() {
