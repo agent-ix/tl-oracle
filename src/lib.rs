@@ -14,6 +14,9 @@ use tl_syntax::{
 /// Counted verification partitions used by downstream development tests.
 pub mod population;
 
+mod profile;
+pub use profile::{evaluate_closed_trace_v1, evaluate_origin_complete};
+
 /// A discrete inclusive interval or an interval extending without an end.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Interval {
@@ -270,6 +273,12 @@ pub enum OracleError {
     /// The finite oracle needs a value for each referenced proposition.
     #[error("finite trace omits a referenced proposition")]
     FinitePropositionMissing,
+    /// A past operator was supplied to the closed future profile.
+    #[error("past operator is unsupported by the closed-trace profile")]
+    ClosedTracePastUnsupported,
+    /// A future operator was supplied to the origin-complete past profile.
+    #[error("future operator is unsupported by the origin-complete profile")]
+    OriginFutureUnsupported,
     /// An open-upper interval is outside the closed finite profile.
     #[error("unbounded interval is not admitted on a closed finite trace")]
     UnboundedFiniteInterval,
