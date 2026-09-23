@@ -2,7 +2,8 @@
 
 Independent, development-only reference semantics for the Stage 1 TL crates.
 It uses public `tl-syntax` identities and has no dependency on `tl-mltl` or
-`tl-rewrite`. It is not a production package and is not published.
+`tl-rewrite`. It is a public MIT-licensed development tool, but is not
+published as a crate.
 
 The oracle evaluates each formula directly from the temporal clauses over an
 ultimately periodic word. Unknown observations are enumerated as common Boolean
