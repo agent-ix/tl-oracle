@@ -11,6 +11,9 @@ use tl_syntax::{
     PartialValue, PropositionId, SemanticProfile, TemporalInterval,
 };
 
+/// Counted verification partitions used by downstream development tests.
+pub mod population;
+
 /// A discrete inclusive interval or an interval extending without an end.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Interval {
