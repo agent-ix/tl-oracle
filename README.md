@@ -10,6 +10,14 @@ ultimately periodic word. Unknown observations are enumerated as common Boolean
 completions of each lasso cell. A configured resource limit returns an error;
 it never turns incomplete exploration into a proof.
 
+For bounded words, `evaluate_closed_trace_v1` and `evaluate_origin_complete`
+match the two owner profiles explicitly. The former begins bounded U/R guards
+at the interval lower endpoint and pads absent future atoms with false. The
+latter evaluates past intervals across the origin with false pre-origin atoms.
+The older `evaluate_finite` keeps its origin-limited, offset-zero guard
+reference clauses for the independent finite partition and law tests; it is
+not an owner-profile comparison API.
+
 Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and
 `cargo test` locally. The `TC-175`, `TC-176`, `TC-193`, and `TC-194` tests are
 the initial independent-oracle checks.

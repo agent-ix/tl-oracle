@@ -380,11 +380,14 @@ pub fn from_syntax(graph: InfiniteFormula<'_>, root: NodeId) -> Result<Formula, 
     lower(graph, root, 0, &mut budget)
 }
 
-/// Evaluates a complete finite word using the closed-trace clauses.
+/// Evaluates a complete finite word with the oracle's original temporal clauses.
 ///
 /// Atomic observations beyond the closed word are false; Boolean constants
 /// keep their usual values. Every referenced atom in a materialized cell must
-/// be present. Open-upper intervals are refused by this profile.
+/// be present. Past windows stop at the origin and U/R/S/T guards begin at
+/// offset zero. Open-upper intervals are refused. Use the explicit
+/// [`evaluate_closed_trace_v1`] or [`evaluate_origin_complete`] entry points
+/// when comparing against those owner profiles.
 pub fn evaluate_finite(
     formula: &Formula,
     cells: &[BTreeMap<PropositionId, bool>],
