@@ -14,6 +14,9 @@ use tl_syntax::{
 /// Counted verification partitions used by downstream development tests.
 pub mod population;
 
+/// Declared V11 lasso, fairness, and partial-evidence verification partition.
+pub mod v11;
+
 mod profile;
 pub use profile::{evaluate_closed_trace_v1, evaluate_origin_complete};
 

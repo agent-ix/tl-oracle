@@ -38,3 +38,16 @@ past/future nesting over repeated laps, fairness filtering, partial-information
 monotonicity, bad-prefix refutation and seeded wrong outcomes. Production
 comparison remains the responsibility of the consuming `tl-mltl` test lane;
 the oracle itself has no production dependency.
+
+`src/v11.rs` declares a distinct V11 comparison partition with 30 formula
+shapes, including every temporal operator and four mixed future/past nestings;
+228 complete, 136 single-unknown, and 8 mixed-unknown lassos; three fairness
+modes; and positions 0, 1, 3, and 6. It declares 133,920 cases, of which an
+independent Boolean completion count predicts 108,720 fair-admitted and 25,200
+empty-fair refusals. `tests/v11_population.rs` visits every case once, checks
+the oracle's fair-completion count against that calculation, and seeds wrong
+counts, skipped cases, fairness bypass, unsound prefix proof, and past-state
+reset. This is a completed small partition. V11 production agreement remains
+incomplete until `tl-mltl` consumes the public axes and compares every case;
+the partition does not claim all lasso lengths, formula depths, or interval
+values.
