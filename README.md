@@ -1,42 +1,121 @@
 # tl-oracle
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/k8DVhuYBR2)
+[![License](https://img.shields.io/badge/license-MIT-blue)](#license)
+[![Rust](https://img.shields.io/badge/rust-1.98.1%2B-orange?logo=rust)](Cargo.toml)
 
-Independent, development-only reference semantics for the Stage 1 TL crates.
-It uses public `tl-syntax` identities and has no dependency on `tl-mltl` or
-`tl-rewrite`. It is a public MIT-licensed development tool, but is not
-published as a crate.
+tl-oracle is a Rust crate that gives the TL family an independent reference
+semantics for Mission-time Linear Temporal Logic (MLTL) formulas over finite
+words and over ultimately periodic words (lassos). It is used only in
+development, as the second opinion in differential tests of
+[tl-mltl](https://github.com/agent-ix/tl-mltl) and
+[tl-rewrite](https://github.com/agent-ix/tl-rewrite). The other family crates
+are [tl-syntax](https://github.com/agent-ix/tl-syntax),
+[tl-parse](https://github.com/agent-ix/tl-parse) and
+[quire-mltl](https://github.com/agent-ix/quire-mltl).
 
-The oracle evaluates each formula directly from the temporal clauses over an
-ultimately periodic word. Unknown observations are enumerated as common Boolean
-completions of each lasso cell. A configured resource limit returns an error;
-it never turns incomplete exploration into a proof.
+The crate depends on tl-syntax for formula and trace identities and has no
+dependency on tl-mltl or tl-rewrite. It evaluates each operator directly from
+its temporal clause, enumerates every Boolean completion of missing or
+conflicting observations, and returns a verdict for one trace. It does not
+parse text, rewrite formulas, check a model, or return a result that covers
+more than the trace it was given. The crate has `publish = false`.
 
-For bounded words, `evaluate_closed_trace_v1` and `evaluate_origin_complete`
-match the two owner profiles explicitly. The former begins bounded U/R guards
-at the interval lower endpoint and pads absent future atoms with false. The
-latter evaluates past intervals across the origin with false pre-origin atoms.
-The older `evaluate_finite` keeps its origin-limited, offset-zero guard
-reference clauses for the independent finite partition and law tests; it is
-not an owner-profile comparison API.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
+  <img alt="A formula and a lasso trace go to two independent evaluators. tl-mltl, the production evaluator, returns a verdict. tl-oracle converts the formula to its own tree of 17 node kinds, enumerates the completions of missing and conflicting evidence (at most 65,536 by default), filters them by fairness, and returns an Outcome or one of its 14 OracleError refusals. A differential test in tl-mltl compares the two results and reports whether they agree." src="docs/images/hero-light.svg">
+</picture>
 
-Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and
-`cargo test` locally. The `TC-175`, `TC-176`, `TC-193`, and `TC-194` tests are
-the initial independent-oracle checks.
+> **Status: prerelease.** The API is not stable. The crate is not published to
+> a registry, and other TL crates use it as a git dev-dependency.
 
-`tests/exhaustive_small_scope.rs` completes one declared finite partition:
-one proposition, all Boolean and temporal operator constructors at depth one,
-six closed intervals with `0 <= a <= b <= 2` plus `[0,)`, and every complete
-word of length one through three at each valid position. Its independently
-calculated cardinality is 12,954 cases: 11,322 admitted comparisons against a
-separate finite reference and 1,632 explicit open-interval refusals. The
-`PopulationLedger` detects omissions, duplicates, out-of-domain IDs and wrong
-answers; a recorded failure cannot be cleared by a later successful visit.
-This is a completed finite partition, not the full depth-three V1 target.
+## Usage
 
-`tests/semantic_laws.rs` enumerates 34 complete lassos with every loop entry
-through three materialized cells. It checks duality, lasso unrolling, mixed
-past/future nesting over repeated laps, fairness filtering, partial-information
-monotonicity, bad-prefix refutation and seeded wrong outcomes. Production
-comparison remains the responsibility of the consuming `tl-mltl` test lane;
-the oracle itself has no production dependency.
+This evaluates `p & !p` on a lasso whose loop is one cell with no observation of
+`p`. The formula is false under both completions of `p`, so the verdict is
+`Refuted`, with the reason for the open evidence recorded.
+
+```rust
+use std::collections::BTreeMap;
+use tl_oracle::{evaluate, Evidence, Formula, Lasso, Limits, Uncertainty, Verdict};
+use tl_syntax::PropositionId;
+
+let p = PropositionId(0);
+let cell = BTreeMap::from([(p, Evidence::Missing)]);
+let lasso = Lasso::new(vec![], vec![cell]).unwrap();
+
+let claim = Formula::And(
+    Box::new(Formula::Atom(p)),
+    Box::new(Formula::Not(Box::new(Formula::Atom(p)))),
+);
+let outcome = evaluate(&claim, &[], &lasso, 0, Limits::default()).unwrap();
+assert_eq!(outcome.verdict, Verdict::Refuted);
+assert_eq!(outcome.fair_completions, 2);
+assert_eq!(outcome.uncertainty, Uncertainty::Missing);
+```
+
+The snippet follows the partial-completion test in `tests/reference.rs`. More
+examples are in [docs/examples.md](docs/examples.md).
+
+## Reference
+
+| Function | Input | Result |
+| --- | --- | --- |
+| `evaluate` | Oracle `Formula`, fairness premises, `Lasso`, position, `Limits`. | `Outcome` with a `Verdict`. |
+| `evaluate_syntax` | A validated tl-syntax infinite formula graph, claim and fairness roots, `Lasso`. | `Outcome`. |
+| `evaluate_documents` | An infinite formula document and a lasso trace document. | `Outcome`, after profile, clock and proposition-map checks. |
+| `evaluate_closed_trace_v1` | Formula, complete finite word, position. | `bool` under `mltl.closed-trace/v1`. |
+| `evaluate_origin_complete` | Formula, complete finite word, position. | `bool` under `mltl.origin-complete-history/v1`. |
+| `evaluate_finite` | Formula, complete finite word, position. | `bool` under the original finite clauses, used by the finite partition and law tests. |
+| `from_syntax` | A validated tl-syntax infinite formula graph and a root. | Oracle `Formula`. |
+
+| Type | Role |
+| --- | --- |
+| `Formula`, `Interval` | The oracle's own formula tree: 17 node kinds, closed or unbounded intervals. |
+| `Lasso`, `Evidence` | A prefix and a nonempty loop. Each cell holds `False`, `True`, `Missing`, `Conflicting` or `Impossible` per proposition. |
+| `Limits` | Maximum depth, offset, positions and completions. |
+| `Verdict` | `Proved`, `Refuted` or `Inconclusive`. |
+| `Outcome` | The verdict, whether each truth value is possible, the count of fair completions and an `Uncertainty`. |
+| `OracleError` | A refusal or an exhausted resource limit. It is never a truth value. |
+| `population` | `PopulationLedger`, which counts the cases of a declared finite partition. |
+
+See [docs/api-reference.md](docs/api-reference.md),
+[docs/evidence.md](docs/evidence.md) and
+[docs/why-an-oracle.md](docs/why-an-oracle.md).
+
+## The TL stack
+
+tl-syntax holds the types every TL crate shares. tl-parse reads text into
+these graphs, tl-rewrite and tl-mltl work on them, tl-oracle is the
+development-only reference evaluator, and quire-mltl is the one crate that
+connects the family to Quire.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/tl-stack-dark.svg">
+  <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
+</picture>
+
+[docs/how-it-works.md](docs/how-it-works.md) shows where each crate sits in the
+text-to-outcome pipeline.
+
+## Building and testing
+
+```sh
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+The tests include a dependency-boundary check that reads `cargo tree` and
+fails if tl-mltl or tl-rewrite appears among the normal dependencies. The
+exhaustive and law tests are described in
+[docs/why-an-oracle.md](docs/why-an-oracle.md#how-the-oracle-is-checked).
+
+## Contributing
+
+Run the three commands under Building and testing before opening a pull
+request. Changes are discussed on the [Discord](https://discord.gg/k8DVhuYBR2).
+
+## License
+
+Licensed under the [MIT license](LICENSE).
