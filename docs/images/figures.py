@@ -167,7 +167,7 @@ SCENARIO_LOOK = [
     # (step, crate, what to look at) for the case r2u2-future-deadline-v1
     (1, "tl-parse", "the tree is one F node, interval [0,3], over p2"),
     (2, "tl-syntax", "p2 is bound to signal s2, the signal the requirement waits for"),
-    (3, "tl-rewrite", "status Unchanged: no rule applies and no step is recorded"),
+    (3, "tl-rewrite", "status Unchanged under closed-trace: no rule applies, no step recorded; online-prefix has no rule set"),
     (4, "tl-mltl", "s2 is absent at instants 0 to 3, so false at time 0; R2U2 agrees"),
     (5, "tl-oracle", "a second evaluator reads the same formula and trace and returns false"),
     (6, "quire-mltl", "false becomes Value false only if the observation views allow a value"),
@@ -182,7 +182,7 @@ def scenario_sequence(here=None):
         684,
         "A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer "
         "sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, "
-        "and sends the document to tl-rewrite, which reports Unchanged. tl-mltl evaluates the formula "
+        "and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula "
         "and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside "
         "the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the "
         "same formula and trace independently and returns false. quire-mltl maps the result to Value false. "
