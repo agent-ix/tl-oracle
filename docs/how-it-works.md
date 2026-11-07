@@ -59,7 +59,7 @@ A formula passes through several crates on its way from text to a Quire outcome.
 
 The dependency structure between the crates is in the [README](../README.md#the-tl-stack).
 
-## In a debugging session
+## A worked example
 
 A deadline requirement `F[0,3] p2` fails on a recorded trace, and the engineer wants to know why. tl-oracle is step 5 of that investigation. It evaluates the same formula and trace as tl-mltl with its own code and returns a second verdict, so a fault in the production evaluator cannot hide behind its own output.
 
