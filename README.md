@@ -26,8 +26,24 @@ more than the trace it was given. The crate has `publish = false`.
   <img alt="A formula and a lasso trace go to two independent evaluators. tl-mltl, the production evaluator, returns a verdict. tl-oracle converts the formula to its own tree of 17 node kinds, enumerates the completions of missing and conflicting evidence (at most 65,536 by default), filters them by fairness, and returns an Outcome or one of its 14 OracleError refusals. A differential test in tl-mltl compares the two results and reports whether they agree." src="docs/images/hero-light.svg">
 </picture>
 
-> **Status: prerelease.** The API is not stable. The crate is not published to
-> a registry, and other TL crates use it as a git dev-dependency.
+## Getting started
+
+tl-oracle is not on crates.io. Depend on it through git as a development dependency:
+
+```toml
+[dev-dependencies]
+tl-oracle = { git = "https://github.com/agent-ix/tl-oracle" }
+```
+
+Add `rev = "<commit>"` to pin a commit. It needs the Rust version in `rust-version` in `Cargo.toml`, or newer.
+
+To build from a clone:
+
+```sh
+git clone https://github.com/agent-ix/tl-oracle.git
+cd tl-oracle
+cargo build --release
+```
 
 ## Usage
 
