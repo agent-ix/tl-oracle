@@ -4,22 +4,15 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)](#license)
 [![Rust](https://img.shields.io/badge/rust-1.98.1%2B-orange?logo=rust)](Cargo.toml)
 
-tl-oracle is a Rust crate that gives the TL family an independent reference
-semantics for Mission-time Linear Temporal Logic (MLTL) formulas over finite
-words and over ultimately periodic words (lassos). It is used only in
-development, as the second opinion in differential tests of
-[tl-mltl](https://github.com/agent-ix/tl-mltl) and
-[tl-rewrite](https://github.com/agent-ix/tl-rewrite). The other family crates
-are [tl-syntax](https://github.com/agent-ix/tl-syntax),
-[tl-parse](https://github.com/agent-ix/tl-parse) and
-[quire-mltl](https://github.com/agent-ix/quire-mltl).
+tl-oracle is an independent second implementation of Mission-time Linear Temporal
+Logic (MLTL) semantics, for checking an evaluator. It evaluates a formula
+directly from the definition of each operator over finite words and over
+ultimately periodic words (lassos), and returns a verdict for one trace.
 
-The crate depends on tl-syntax for formula and trace identities and has no
-dependency on tl-mltl or tl-rewrite. It evaluates each operator directly from
-its temporal clause, enumerates every Boolean completion of missing or
-conflicting observations, and returns a verdict for one trace. It does not
-parse text, rewrite formulas, check a model, or return a result that covers
-more than the trace it was given. The crate has `publish = false`.
+Where observations are missing or conflicting, it enumerates every Boolean
+completion and reports how many are fair. Use it as a dev-dependency in
+differential tests: when tl-oracle and your evaluator disagree on a trace, one of
+them is wrong.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
@@ -70,8 +63,7 @@ assert_eq!(outcome.fair_completions, 2);
 assert_eq!(outcome.uncertainty, Uncertainty::Missing);
 ```
 
-The snippet follows the partial-completion test in `tests/reference.rs`. More
-examples are in [docs/examples.md](docs/examples.md).
+More examples are in [docs/examples.md](docs/examples.md).
 
 ## Reference
 
@@ -101,18 +93,12 @@ See [docs/api-reference.md](docs/api-reference.md),
 
 ## The TL stack
 
-tl-syntax holds the types every TL crate shares. tl-parse reads text into
-these graphs, tl-rewrite and tl-mltl work on them, tl-oracle is the
-development-only reference evaluator, and quire-mltl is the one crate that
-connects the family to Quire.
+tl-oracle is the reference evaluator that tl-mltl and tl-rewrite test against.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tl-stack-dark.svg">
   <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
 </picture>
-
-[docs/how-it-works.md](docs/how-it-works.md) shows where each crate sits in the
-text-to-outcome pipeline.
 
 ## Building and testing
 
@@ -122,9 +108,7 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
-The tests include a dependency-boundary check that reads `cargo tree` and
-fails if tl-mltl or tl-rewrite appears among the normal dependencies. The
-exhaustive and law tests are described in
+The exhaustive and law tests are described in
 [docs/why-an-oracle.md](docs/why-an-oracle.md#how-the-oracle-is-checked).
 
 ## Contributing
