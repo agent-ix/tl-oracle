@@ -195,7 +195,11 @@ pub fn decide_documents(
     decide(&claim, &fairness, &Lasso::from(trace), position, limits)
 }
 
-/// True when `formula` holds at some position of the loop of the word.
+/// True when `formula` holds at infinitely many positions of the word.
+///
+/// A past operator can differ at the first loop positions from its eventual
+/// value, so the check reads the last period of the unrolled word, where every
+/// operator has stabilized. Two unrolling depths must agree.
 fn infinitely_often(
     formula: &Formula,
     cells: &[Cell],
@@ -203,12 +207,18 @@ fn infinitely_often(
     limits: Limits,
 ) -> Result<bool, OracleError> {
     let period = cells.len() - loop_entry;
-    for offset in 0..period {
-        if decide_complete(formula, cells, loop_entry, loop_entry + offset, limits)? {
-            return Ok(true);
-        }
+    let base = loop_entry + (weight(formula) + 2) * period;
+    let mut answers = [false; 2];
+    for (slot, length) in answers.iter_mut().zip([base, base + 3 * period]) {
+        let w = word(cells, loop_entry, length, limits)?;
+        let values = w.eval(formula)?;
+        *slot = values[length - period..].iter().any(|v| *v);
     }
-    Ok(false)
+    if answers[0] == answers[1] {
+        Ok(answers[0])
+    } else {
+        Err(OracleError::NoPeriodicFixedPoint)
+    }
 }
 
 /// An upper bound on how many loop periods any operator can need to settle.
