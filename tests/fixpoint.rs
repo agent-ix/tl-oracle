@@ -74,7 +74,7 @@ fn hand_checked_lasso_cases() {
         1,
         0
     ));
-    // Lower bound shifts without wrapping the guard: p U[2,) !p on "1110".
+    // Lower bound shifts one step per unit with no guard: p U[2,) !p on "1110".
     let shifted = F::Until(open(2), b(p(0)), b(F::Not(b(p(0)))));
     assert!(holds(&shifted, "1110", 3, 0));
     // Past: O[0,) p at position 5 of 0.(10)^w sees the p at 1.
@@ -358,4 +358,72 @@ fn a_past_premise_must_hold_after_it_stabilizes() {
         evaluate(&p(0), &premise, &lasso, 0, l),
         Err(OracleError::EmptyFairAdmission)
     );
+}
+
+/// `p U[a,b] q` holds at `t` iff `q` holds at some `t+i` with `a <= i <= b` and
+/// `p` holds at every `t+j` with `a <= j < i`; offsets below `a` are never read
+/// (the MLTL definition). Worked by hand on "0110" with the loop at the final
+/// `0`: p is false at 0, true at 1 and 2, false from 3 on.
+fn check_guard_range(f: &F, expected: bool) {
+    check_guard_range_at(f, expected, 0);
+}
+
+fn check_guard_range_at(f: &F, expected: bool, at: usize) {
+    let (word, entry) = ("0110", 3);
+    assert_eq!(holds(f, word, entry, at), expected, "fixpoint {f:?}");
+    let cells = word0(word);
+    let reference = evaluate(f, &[], &as_lasso(&cells, entry), at, Limits::default()).unwrap();
+    assert_eq!(reference.possible_true, expected, "scanning {f:?}");
+}
+
+#[test]
+fn until_guard_starts_at_the_lower_bound() {
+    let not_p = || b(F::Not(b(p(0))));
+    // Witness !p at offset 3; the guard needs p on [2,3) = offset 2 only, and
+    // the false p at offset 0 is below the lower bound.
+    check_guard_range(&F::Until(closed(2, 3), b(p(0)), not_p()), true);
+    check_guard_range(&F::Until(open(2), b(p(0)), not_p()), true);
+    // The lower bound 1 needs p at offsets 1 and 2: both hold.
+    check_guard_range(&F::Until(closed(1, 3), b(p(0)), not_p()), true);
+    // Lower bound 0 finds the witness !p at offset 0 itself.
+    check_guard_range(&F::Until(closed(0, 3), b(p(0)), not_p()), true);
+    // Witness window [2,2] holds p, not !p, and there is no other witness.
+    check_guard_range(&F::Until(closed(2, 2), b(p(0)), not_p()), false);
+}
+
+#[test]
+fn release_guard_starts_at_the_lower_bound() {
+    // `p R[a,b] q` is `not(not p U[a,b] not q)`; the window starts at `a`.
+    let q = || b(F::Not(b(p(0))));
+    // not(p U[2,3] !p): witness !p at offset 3 with p at offset 2, so the
+    // until holds and the release is false; a guard read from offset 0 would
+    // fail on the false p there and make the release true.
+    check_guard_range(
+        &F::Release(closed(2, 3), b(F::Not(b(p(0)))), b(p(0))),
+        false,
+    );
+    // False R[2,3] !p needs !p at offsets 2 and 3: p holds at 2, so false.
+    check_guard_range(&F::Release(closed(2, 3), b(F::False), q()), false);
+    // p R[3,) !p: !p at 3 and every later offset, no release needed. True.
+    check_guard_range(&F::Release(open(3), b(p(0)), q()), true);
+    // p R[1,2] !p: the until `!p U[1,2] p` has witness p at 1, guard empty.
+    check_guard_range(&F::Release(closed(1, 2), b(p(0)), q()), false);
+}
+
+/// The past duals follow the same rule: `p S[a,b] q` holds at `t` iff `q` holds
+/// at some `t-d` with `a <= d <= b` and `p` holds at every `t-j` with
+/// `a <= j < d`. On "0110" with the loop at the final `0`, position 3 sees p
+/// true at 2 and 1 and false at 0 and at 3 itself.
+#[test]
+fn since_and_triggered_guard_starts_at_the_lower_bound() {
+    let not_p = || b(F::Not(b(p(0))));
+    // Witness !p at distance 3 (position 0); the guard needs p at distances 1
+    // and 2, and the false p at distance 0 is below the lower bound.
+    check_guard_range_at(&F::Since(closed(1, 3), b(p(0)), not_p()), true, 3);
+    check_guard_range_at(&F::Since(open(1), b(p(0)), not_p()), true, 3);
+    // Lower bound 0 reads the false p at distance 0, but the witness !p is
+    // also there, so the since holds immediately.
+    check_guard_range_at(&F::Since(closed(0, 3), b(p(0)), not_p()), true, 3);
+    // not(p S[1,3] !p) is false for the reason above.
+    check_guard_range_at(&F::Triggered(closed(1, 3), not_p(), b(p(0))), false, 3);
 }

@@ -21,6 +21,8 @@ The oracle defines its own `Formula` tree. It has 17 node kinds: `False`, `True`
 
 Evaluating one completion is a recursive denotation over periodic sequences. Each subformula becomes a sequence of Boolean values with a start index and a period. Future operators read ahead along the sequence. Past operators read behind and look for a repeating pattern, which they must reach within a bounded number of extra laps or the result is `NoPeriodicFixedPoint`. [evidence.md](evidence.md) describes the result record.
 
+On a lasso, `p U[a,b] q` holds at `t` when `q` holds at some `t+i` with `a <= i <= b` and `p` holds at every `t+j` with `a <= j < i`. Offsets below `a` are not read. `R` is the dual, `not(not p U not q)`. `p S[a,b] q` reads `p` on the distances `[a,d)` before the witness distance `d` and `T` is its dual. The scanning evaluator and the fixpoint procedure both follow this clause, each written from it separately.
+
 ## The bounded profile evaluators
 
 Three functions evaluate a complete finite word, which is a slice of cells that map each proposition to `bool`. They take a position inside the word and return `bool`.
