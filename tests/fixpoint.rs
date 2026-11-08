@@ -311,7 +311,17 @@ fn partial_evidence_and_fairness_outcomes_agree() {
         .unwrap(),
     ];
     let claims = level_one(&[p(0), p(1)]);
-    let fairness_sets: [Vec<F>; 3] = [vec![], vec![p(0)], vec![p(0), F::Not(b(p(1)))]];
+    let fairness_sets: [Vec<F>; 5] = [
+        vec![],
+        vec![p(0)],
+        vec![p(0), F::Not(b(p(1)))],
+        // Past premises are unstable at the first loop positions.
+        vec![F::Once(closed(0, 2), b(p(1)))],
+        vec![
+            F::Historically(open(0), b(p(0))),
+            F::Future(open(0), b(p(1))),
+        ],
+    ];
     let mut compared = 0u64;
     for claim in claims.iter().step_by(3) {
         for lasso in &lassos {
@@ -326,4 +336,26 @@ fn partial_evidence_and_fairness_outcomes_agree() {
         }
     }
     assert!(compared > 1000);
+}
+
+/// A past premise that holds only at the first loop positions is not visited
+/// infinitely often: p1 is true only at the origin, so `O[0,2] p1` holds at
+/// positions 0, 1 and 2 and never again.
+#[test]
+fn a_past_premise_must_hold_after_it_stabilizes() {
+    use Evidence::{False as Fa, True as T};
+    let ev = |v: &[(u32, Evidence)]| -> BTreeMap<PropositionId, Evidence> {
+        v.iter().map(|(i, e)| (PropositionId(*i), *e)).collect()
+    };
+    let lasso = Lasso::new(vec![ev(&[(0, T), (1, T)])], vec![ev(&[(0, T), (1, Fa)])]).unwrap();
+    let premise = [F::Once(closed(0, 2), b(p(1)))];
+    let l = Limits::default();
+    assert_eq!(
+        decide(&p(0), &premise, &lasso, 0, l),
+        Err(OracleError::EmptyFairAdmission)
+    );
+    assert_eq!(
+        evaluate(&p(0), &premise, &lasso, 0, l),
+        Err(OracleError::EmptyFairAdmission)
+    );
 }
