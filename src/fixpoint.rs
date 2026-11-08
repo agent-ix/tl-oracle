@@ -159,6 +159,39 @@ pub fn decide(
     })
 }
 
+/// Decides two validated syntax documents, with the same profile, clock and
+/// proposition-map admission as the scanning evaluator's document entry point.
+pub fn decide_documents(
+    formula: &InfiniteFormulaDocument,
+    trace: &LassoTraceDocument,
+    claim_root: NodeId,
+    fairness_roots: &[NodeId],
+    position: usize,
+    limits: Limits,
+) -> Result<Outcome, OracleError> {
+    if formula.semantic_profile() != SemanticProfile::InfiniteTraceV1
+        || trace.semantic_profile() != SemanticProfile::InfiniteTraceV1
+        || formula.clock() != trace.clock()
+    {
+        return Err(OracleError::IdentityMismatch);
+    }
+    let graph = formula.formula();
+    let claim = from_syntax(graph, claim_root)?;
+    let fairness: Vec<_> = fairness_roots
+        .iter()
+        .map(|root| from_syntax(graph, *root))
+        .collect::<Result<_, _>>()?;
+    let mut atoms = BTreeSet::new();
+    claim.collect_atoms(&mut atoms, 1);
+    for premise in &fairness {
+        premise.collect_atoms(&mut atoms, 1);
+    }
+    if !atoms.iter().all(|atom| trace.propositions().contains(atom)) {
+        return Err(OracleError::ForeignProposition);
+    }
+    decide(&claim, &fairness, &Lasso::from(trace), position, limits)
+}
+
 /// True when `formula` holds at some position of the loop of the word.
 fn infinitely_often(
     formula: &Formula,
