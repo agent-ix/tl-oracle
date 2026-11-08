@@ -11,6 +11,9 @@ use tl_syntax::{
     PartialValue, PropositionId, SemanticProfile, TemporalInterval,
 };
 
+/// A second, independent decision procedure based on successor fixpoints.
+pub mod fixpoint;
+
 /// Counted verification partitions used by downstream development tests.
 pub mod population;
 
