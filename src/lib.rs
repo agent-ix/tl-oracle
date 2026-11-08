@@ -856,14 +856,12 @@ impl ConcreteWord<'_> {
                 Some(end) => end,
                 None => lower + start.saturating_sub(time) + self.period(),
             };
-            let mut guard_holds = true;
-            for offset in 0..=ceiling {
-                if offset >= lower && guard_holds && witness.at(time + offset) {
+            for offset in lower..=ceiling {
+                if witness.at(time + offset) {
                     return true;
                 }
                 if let Some(ref guard) = guard {
-                    guard_holds &= guard.at(time + offset);
-                    if !guard_holds {
+                    if !guard.at(time + offset) {
                         return false;
                     }
                 }
@@ -896,14 +894,12 @@ impl ConcreteWord<'_> {
             let values: Vec<bool> = (0..len)
                 .map(|time| {
                     let ceiling = upper.unwrap_or(time).min(time);
-                    let mut guard_holds = true;
-                    for distance in 0..=ceiling {
-                        if distance >= lower && guard_holds && witness.at(time - distance) {
+                    for distance in lower..=ceiling {
+                        if witness.at(time - distance) {
                             return true;
                         }
                         if let Some(ref guard) = guard {
-                            guard_holds &= guard.at(time - distance);
-                            if !guard_holds {
+                            if !guard.at(time - distance) {
                                 return false;
                             }
                         }

@@ -7,7 +7,9 @@
 //!
 //! * `X U[a,b] Y` is `Y` at lower bound zero and upper bound zero, and
 //!   `Y or (X and next(...[0,b-1]))` above zero; a positive lower bound only
-//!   shifts one step with the guard required.
+//!   shifts one step, with no guard required, because the guard covers the
+//!   offsets `[a,i)` before the witness `i` and never the offsets below `a`.
+//!   `S[a,b]` and `T[a,b]` shift the same way toward the origin.
 //! * Unbounded operators are the least (`U`, `F`, `S`, `O`) or greatest (`R`,
 //!   `G`, `T`, `H`) solution of the same equation, iterated from the bottom or
 //!   top element until it stops changing.
@@ -375,7 +377,7 @@ impl Word<'_> {
         let n = self.len();
         if a > 0 {
             let rest = self.until(a - 1, b.map(|e| e - 1), p, q);
-            return (0..n).map(|i| p[i] && rest[self.next(i)]).collect();
+            return (0..n).map(|i| rest[self.next(i)]).collect();
         }
         match b {
             Some(0) => q.to_vec(),
@@ -394,7 +396,7 @@ impl Word<'_> {
         let n = self.len();
         if a > 0 {
             let rest = self.release(a - 1, b.map(|e| e - 1), p, q);
-            return (0..n).map(|i| p[i] || rest[self.next(i)]).collect();
+            return (0..n).map(|i| rest[self.next(i)]).collect();
         }
         match b {
             Some(0) => q.to_vec(),
@@ -413,7 +415,7 @@ impl Word<'_> {
         let n = self.len();
         if a > 0 {
             let rest = self.since(a - 1, b.map(|e| e - 1), p, q);
-            return (0..n).map(|t| t >= 1 && p[t] && rest[t - 1]).collect();
+            return (0..n).map(|t| t >= 1 && rest[t - 1]).collect();
         }
         match b {
             Some(0) => q.to_vec(),
@@ -438,7 +440,7 @@ impl Word<'_> {
         let n = self.len();
         if a > 0 {
             let rest = self.triggered(a - 1, b.map(|e| e - 1), p, q);
-            return (0..n).map(|t| t < 1 || p[t] || rest[t - 1]).collect();
+            return (0..n).map(|t| t < 1 || rest[t - 1]).collect();
         }
         match b {
             Some(0) => q.to_vec(),
