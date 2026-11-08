@@ -14,6 +14,9 @@ use tl_syntax::{
 /// Counted verification partitions used by downstream development tests.
 pub mod population;
 
+/// A second, independent decision procedure based on successor fixpoints.
+pub mod fixpoint;
+
 /// Declared V11 lasso, fairness, and partial-evidence verification partition.
 pub mod v11;
 
