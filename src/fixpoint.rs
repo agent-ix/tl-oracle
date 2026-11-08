@@ -26,9 +26,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    Evidence, Formula, Interval, Lasso, Limits, OracleError, Outcome, Uncertainty, Verdict,
+    from_syntax, Evidence, Formula, Interval, Lasso, Limits, OracleError, Outcome, Uncertainty,
+    Verdict,
 };
-use tl_syntax::PropositionId;
+use tl_syntax::{
+    InfiniteFormulaDocument, LassoTraceDocument, NodeId, PropositionId, SemanticProfile,
+};
 
 /// One concrete (complete Boolean) lasso cell.
 pub type Cell = BTreeMap<PropositionId, bool>;
