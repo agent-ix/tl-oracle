@@ -52,11 +52,11 @@ A limit that is exceeded returns `ResourceIncomplete`. The crate never turns inc
 
 ## Where the crate sits
 
-A formula passes through several crates on its way from text to a Quire outcome. tl-oracle takes no part in that path. In tests it receives the same formula and trace as tl-mltl and returns a second result.
+A formula passes through several crates on its way from text to a Filament outcome. tl-oracle takes no part in that path. In tests it receives the same formula and trace as tl-mltl and returns a second result.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/pipeline-dark.svg">
-  <img alt="A formula moves from text to a Quire outcome. tl-parse turns MLTL text into a formula document, tl-rewrite returns a rewritten document, and tl-mltl evaluates it against a trace. In tests, tl-oracle evaluates the same formula and trace independently and the verdicts are compared. quire-mltl maps the result to a Boolean Value or a typed NonValue reason. All documents use the vocabulary of tl-syntax." src="images/pipeline-light.svg">
+  <img alt="A formula moves from text to a Filament outcome. tl-parse turns MLTL text into a formula document, tl-rewrite returns a rewritten document, and tl-mltl evaluates it against a trace. In tests, tl-oracle evaluates the same formula and trace independently and the verdicts are compared. filament-mltl maps the result to a Boolean Value or a typed NonValue reason. All documents use the vocabulary of tl-syntax." src="images/pipeline-light.svg">
 </picture>
 
 The dependency structure between the crates is in the [README](../README.md#the-tl-stack).
@@ -67,7 +67,7 @@ A deadline requirement `F[0,3] p2` fails on a recorded trace, and the engineer w
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/scenario-sequence-dark.svg">
-  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. quire-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="images/scenario-sequence-light.svg">
+  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. filament-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="images/scenario-sequence-light.svg">
 </picture>
 
 The trace has four instants, `[[], [0, 1], [1], [1]]`, and `p2` is absent at every one of them. Look at three things in this step.
