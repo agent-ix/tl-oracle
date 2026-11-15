@@ -12,7 +12,7 @@ this repository: the Formula and OracleError enums and the Limits defaults in
 src/lib.rs.
 
 The block between the two SHARED markers is identical in every TL repository
-(tl-syntax, tl-parse, tl-rewrite, tl-mltl, tl-oracle, quire-mltl). Copy it
+(tl-syntax, tl-parse, tl-rewrite, tl-mltl, tl-oracle, filament-mltl). Copy it
 verbatim and call tl_stack(here="<crate>") and stack_pipeline(here="<crate>").
 """
 
@@ -25,7 +25,7 @@ STYLE = "ix-docs"
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# One role per kind of thing, fixed across the TL and Quire repositories.
+# One role per kind of thing, fixed across the TL and Filament repositories.
 ROLES = [
     ("code", "authored source", "box"),
     ("logic", "processing step", "box"),
@@ -42,9 +42,9 @@ TL_CRATES = [
     (0, 1, "tl-parse", "text to formula graph"),
     (1, 1, "tl-oracle", "independent reference"),
     (2, 1, "tl-mltl", "evaluates traces"),
-    (3, 1, "quire-mltl", "the bridge to Quire"),
+    (3, 1, "filament-mltl", "the bridge to Filament"),
     (2, 2, "tl-rewrite", "equivalent rewrites"),
-    (3, 2, "quire-observation", "Quire observations"),
+    (3, 2, "filament-observation", "Filament observations"),
 ]
 
 
@@ -55,14 +55,14 @@ def tl_stack(here="tl-syntax"):
         980,
         356,
         "The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and "
-        "tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite "
-        "depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the "
-        "single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite "
+        "tl-parse, tl-oracle, tl-mltl, tl-rewrite and filament-mltl all depend on it. tl-rewrite "
+        "depends on tl-mltl. filament-mltl depends on tl-mltl and filament-observation, and is the "
+        "single bridge to Filament. Dashed lines are development-only: tl-mltl and tl-rewrite "
         "test against tl-oracle, and tl-rewrite tests against tl-parse.",
     )
     w, h, step = 192, 56, 262
     rows = {0: 24, 1: 140, 2: 256}
-    f.text(3 * step, 244, "QUIRE", "muted", "mono", SMALL)
+    f.text(3 * step, 244, "FILAMENT", "muted", "mono", SMALL)
     f.box(0, rows[0], 980, h, "logic" if here == "tl-syntax" else "ink", "tl-syntax",
           "formula graph · semantic profiles · signal catalog · strict documents")
     where = {}
@@ -70,8 +70,8 @@ def tl_stack(here="tl-syntax"):
         x, y = col * step, rows[row]
         where[name] = (x, y)
         role = "logic" if name == here else "ink"
-        f.box(x, y, w, h, role, name, sub, dashed=(name == "quire-observation"))
-    for name in ("tl-parse", "tl-oracle", "tl-mltl", "quire-mltl"):
+        f.box(x, y, w, h, role, name, sub, dashed=(name == "filament-observation"))
+    for name in ("tl-parse", "tl-oracle", "tl-mltl", "filament-mltl"):
         x, y = where[name]
         f.line([(x + w / 2, rows[0] + h), (x + w / 2, y - 3)], "model")
     f.note(where["tl-parse"][0] + w / 2 + 10, 104, "types", "model")
@@ -79,10 +79,10 @@ def tl_stack(here="tl-syntax"):
     rx, ry = where["tl-rewrite"]
     f.line([(mx + w / 2, my + h), (rx + w / 2, ry - 3)], "model")
     f.note(mx + w / 2 + 10, my + h + 30, "documents", "model")
-    qx, qy = where["quire-mltl"]
+    qx, qy = where["filament-mltl"]
     f.line([(mx + w, my + h / 2), (qx - 3, qy + h / 2)], "model")
     f.note(mx + w + 8, my + h / 2 - 8, "results", "model")
-    ox, oy = where["quire-observation"]
+    ox, oy = where["filament-observation"]
     f.line([(ox + w / 2, oy - 3), (ox + w / 2, qy + h)], "model")
     f.note(ox + w / 2 + 10, qy + h + 30, "observations", "model")
     # development-only edges: tl-oracle and tl-parse feed tests of tl-mltl and tl-rewrite
@@ -102,20 +102,20 @@ PIPELINE_STAGES = [
     ("tl-rewrite", "rewrite", "logic", "tl-rewrite"),
     ("tl-mltl", "evaluate", "logic", "tl-mltl"),
     ("tl-oracle", "tests only", "logic", "tl-oracle"),
-    ("quire-mltl", "map to Quire", "logic", "quire-mltl"),
+    ("filament-mltl", "map to Filament", "logic", "filament-mltl"),
 ]
 
 
 def stack_pipeline(here="tl-syntax"):
-    """End-to-end flow: text, parse, rewrite, evaluate with an oracle cross-check, Quire view."""
+    """End-to-end flow: text, parse, rewrite, evaluate with an oracle cross-check, Filament view."""
     f = Figure(
         "pipeline",
         980,
         392,
-        "A formula moves from text to a Quire outcome. tl-parse turns MLTL text into a formula "
+        "A formula moves from text to a Filament outcome. tl-parse turns MLTL text into a formula "
         "document, tl-rewrite returns a rewritten document, and tl-mltl evaluates it against a "
         "trace. In tests, tl-oracle evaluates the same formula and trace independently and the "
-        "verdicts are compared. quire-mltl maps the result to a Boolean Value or a typed "
+        "verdicts are compared. filament-mltl maps the result to a Boolean Value or a typed "
         "NonValue reason. All documents use the vocabulary of tl-syntax.",
     )
     w, h = 140, 56
@@ -160,7 +160,7 @@ SCENARIO_LANES = [
     ("tl-mltl", "evaluate", 4),
     ("R2U2", "outside", None),
     ("tl-oracle", "reference", 5),
-    ("quire-mltl", "assurance", 6),
+    ("filament-mltl", "assurance", 6),
 ]
 
 SCENARIO_LOOK = [
@@ -170,7 +170,7 @@ SCENARIO_LOOK = [
     (3, "tl-rewrite", "status Unchanged under closed-trace: no rule applies, no step recorded; online-prefix has no rule set"),
     (4, "tl-mltl", "s2 is absent at instants 0 to 3, so false at time 0; R2U2 agrees"),
     (5, "tl-oracle", "a second evaluator reads the same formula and trace and returns false"),
-    (6, "quire-mltl", "false becomes Value false only if the observation views allow a value"),
+    (6, "filament-mltl", "false becomes Value false only if the observation views allow a value"),
 ]
 
 
@@ -185,7 +185,7 @@ def scenario_sequence(here=None):
         "and sends the document to tl-rewrite, which reports Unchanged under the closed-trace profile. tl-mltl evaluates the formula "
         "and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside "
         "the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the "
-        "same formula and trace independently and returns false. quire-mltl maps the result to Value false. "
+        "same formula and trace independently and returns false. filament-mltl maps the result to Value false. "
         "Numbered rings mark where to look at each step.",
     )
     w, h = 112, 50
@@ -211,7 +211,7 @@ def scenario_sequence(here=None):
         ("engineer", "tl-mltl", "formula + trace", "model", "false at 0, buffer 4", "evidence", False, 4),
         ("tl-mltl", "R2U2", "F[0,3](p2)", "model", "false at 0", "evidence", True, None),
         ("engineer", "tl-oracle", "formula + trace", "model", "false", "evidence", True, 5),
-        ("engineer", "quire-mltl", "result", "model", "Value false", "evidence", False, 6),
+        ("engineer", "filament-mltl", "result", "model", "Value false", "evidence", False, 6),
     ]
     for a, b, go, go_role, back, back_role, dev, ring in pairs:
         ia, ib = lane[a], lane[b]
