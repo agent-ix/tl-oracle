@@ -138,7 +138,10 @@ fn tc_193_nested_past_future_keeps_origin_state() {
         Box::new(atom(0)),
         Box::new(F::False),
     );
-    assert_eq!(verdict(&triggered, &word, 0), Verdict::Proved);
+    // FSpec FR-092: the offset 1 at position 0 reads the pre-origin extension,
+    // where `not false` holds, so the dual `not p0 since[1,1] true` holds there as it does everywhere.
+    assert_eq!(verdict(&triggered, &word, 0), Verdict::Refuted);
+    assert_eq!(verdict(&triggered, &word, 1), Verdict::Refuted);
 }
 
 /// TC-193, FR-053-AC-1: one loop lap moved into the prefix preserves the word.

@@ -50,11 +50,16 @@ pub fn decide_complete(
     if loop_entry >= cells.len() {
         return Err(OracleError::EmptyLoop);
     }
+    let (cells, loop_entry, origin) = extended(formula, cells, loop_entry);
+    let position = position
+        .checked_add(origin)
+        .ok_or(OracleError::ResourceIncomplete)?;
     let weight = weight(formula);
     let period = cells.len() - loop_entry;
     let base = loop_entry + (weight + 2) * period;
-    let first = word(cells, loop_entry, base, limits)?.truth(formula, position)?;
-    let second = word(cells, loop_entry, base + 3 * period, limits)?.truth(formula, position)?;
+    let first = word(&cells, loop_entry, origin, base, limits)?.truth(formula, position)?;
+    let second =
+        word(&cells, loop_entry, origin, base + 3 * period, limits)?.truth(formula, position)?;
     if first == second {
         Ok(first)
     } else {
@@ -208,11 +213,12 @@ fn infinitely_often(
     loop_entry: usize,
     limits: Limits,
 ) -> Result<bool, OracleError> {
+    let (cells, loop_entry, origin) = extended(formula, cells, loop_entry);
     let period = cells.len() - loop_entry;
     let base = loop_entry + (weight(formula) + 2) * period;
     let mut answers = [false; 2];
     for (slot, length) in answers.iter_mut().zip([base, base + 3 * period]) {
-        let w = word(cells, loop_entry, length, limits)?;
+        let w = word(&cells, loop_entry, origin, length, limits)?;
         let values = w.eval(formula)?;
         *slot = values[length - period..].iter().any(|v| *v);
     }
@@ -221,6 +227,20 @@ fn infinitely_often(
     } else {
         Err(OracleError::NoPeriodicFixedPoint)
     }
+}
+
+/// The lasso with the pre-origin extension (FSpec FR-092 "Positions before the
+/// origin") materialized in front of it: enough time points with every atom
+/// false that no closed past read from position 0 or later falls below the
+/// unrolled word. Returns the cells, the shifted loop entry and the time point
+/// of position 0.
+fn extended(formula: &Formula, cells: &[Cell], loop_entry: usize) -> (Vec<Cell>, usize, usize) {
+    let origin = formula.pre_origin_reach();
+    let padded = std::iter::repeat_with(Cell::new)
+        .take(origin)
+        .chain(cells.iter().cloned())
+        .collect();
+    (padded, loop_entry + origin, origin)
 }
 
 /// An upper bound on how many loop periods any operator can need to settle.
@@ -244,6 +264,9 @@ fn weight(formula: &Formula) -> usize {
 
 struct Word<'a> {
     limits: Limits,
+    /// The time point of position 0; the points before it are the pre-origin
+    /// extension, where every atom is false.
+    origin: usize,
     /// Unrolled time points; the last `period` of them are the loop.
     cells: Vec<&'a Cell>,
     period: usize,
@@ -252,6 +275,7 @@ struct Word<'a> {
 fn word<'a>(
     cells: &'a [Cell],
     loop_entry: usize,
+    origin: usize,
     length: usize,
     limits: Limits,
 ) -> Result<Word<'a>, OracleError> {
@@ -270,6 +294,7 @@ fn word<'a>(
         .collect();
     Ok(Word {
         limits,
+        origin,
         cells: unrolled,
         period,
     })
@@ -415,7 +440,8 @@ impl Word<'_> {
         let n = self.len();
         if a > 0 {
             let rest = self.since(a - 1, b.map(|e| e - 1), p, q);
-            return (0..n).map(|t| t >= 1 && rest[t - 1]).collect();
+            let floor = self.floor(b);
+            return (0..n).map(|t| t > floor && rest[t - 1]).collect();
         }
         match b {
             Some(0) => q.to_vec(),
@@ -425,10 +451,11 @@ impl Word<'_> {
                     .map(|t| q[t] || (p[t] && t >= 1 && rest[t - 1]))
                     .collect()
             }
+            // The unbounded window reads positions 0 through `t` only.
             None => {
                 let mut x = vec![false; n];
-                for t in 0..n {
-                    x[t] = q[t] || (p[t] && t >= 1 && x[t - 1]);
+                for t in self.origin..n {
+                    x[t] = q[t] || (p[t] && t > self.origin && x[t - 1]);
                 }
                 x
             }
@@ -440,7 +467,8 @@ impl Word<'_> {
         let n = self.len();
         if a > 0 {
             let rest = self.triggered(a - 1, b.map(|e| e - 1), p, q);
-            return (0..n).map(|t| t < 1 || rest[t - 1]).collect();
+            let floor = self.floor(b);
+            return (0..n).map(|t| t <= floor || rest[t - 1]).collect();
         }
         match b {
             Some(0) => q.to_vec(),
@@ -450,13 +478,24 @@ impl Word<'_> {
                     .map(|t| q[t] && (t < 1 || p[t] || rest[t - 1]))
                     .collect()
             }
+            // The unbounded window reads positions 0 through `t` only.
             None => {
                 let mut x = vec![true; n];
-                for t in 0..n {
-                    x[t] = q[t] && (t < 1 || p[t] || x[t - 1]);
+                for t in self.origin..n {
+                    x[t] = q[t] && (t <= self.origin || p[t] || x[t - 1]);
                 }
                 x
             }
+        }
+    }
+
+    /// The last time point a past step cannot step back from: a closed window
+    /// steps into the pre-origin extension, down to the first unrolled point,
+    /// while an unbounded one stops at position 0.
+    fn floor(&self, b: Option<usize>) -> usize {
+        match b {
+            Some(_) => 0,
+            None => self.origin,
         }
     }
 
