@@ -23,6 +23,8 @@ Evaluating one completion is a recursive denotation over periodic sequences. Eac
 
 On a lasso, `p U[a,b] q` holds at `t` when `q` holds at some `t+i` with `a <= i <= b` and `p` holds at every `t+j` with `a <= j < i`. Offsets below `a` are not read. `R` is the dual, `not(not p U not q)`. `p S[a,b] q` reads `p` on the distances `[a,d)` before the witness distance `d` and `T` is its dual. The scanning evaluator and the fixpoint procedure both follow this clause, each written from it separately. `evaluate_finite` is the one evaluator that keeps the older guard from offset zero, described in the next section.
 
+On a lasso, position 0 is the origin. A past operator with a closed interval `[a,b]` whose offset reaches before position 0 reads the pre-origin extension of the trace, as FSpec FR-092 "Positions before the origin" requires: every atom is false there, constants keep their values, and every operator evaluates there from those values. A pre-origin offset is never skipped, so `once[1,1] not p` holds at position 0 and `historically[0,2] p` fails at position 1. The unbounded and `[a,*]` past operators range over positions 0 through `t - a` only. Both lasso evaluators put enough all-false cells in front of the word that no closed past read falls below it.
+
 ## The bounded profile evaluators
 
 Three functions evaluate a complete finite word, which is a slice of cells that map each proposition to `bool`. They take a position inside the word and return `bool`.

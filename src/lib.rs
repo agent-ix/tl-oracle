@@ -104,6 +104,34 @@ impl Formula {
                 .max(q.collect_atoms(atoms, depth + 1)),
         }
     }
+
+    /// How far before position 0 an evaluation from position 0 can read: the
+    /// sum of every closed past upper bound, counting strong previous as one.
+    /// Unbounded past operators stop at the origin and future operators read
+    /// forward, so neither adds reach (FSpec FR-092 "Positions before the
+    /// origin").
+    pub(crate) fn pre_origin_reach(&self) -> usize {
+        use Formula::*;
+        let own = |range: &Interval| match *range {
+            Interval::Closed { end, .. } => end,
+            Interval::Unbounded { .. } => 0,
+        };
+        match self {
+            False | True | Atom(_) => 0,
+            Not(p) | Future(_, p) | Globally(_, p) => p.pre_origin_reach(),
+            Once(r, p) | Historically(r, p) => own(r).saturating_add(p.pre_origin_reach()),
+            StrongPrevious(p) => p.pre_origin_reach().saturating_add(1),
+            And(p, q)
+            | Or(p, q)
+            | Implies(p, q)
+            | Equivalent(p, q)
+            | Until(_, p, q)
+            | Release(_, p, q) => p.pre_origin_reach().saturating_add(q.pre_origin_reach()),
+            Since(r, p, q) | Triggered(r, p, q) => own(r)
+                .saturating_add(p.pre_origin_reach())
+                .saturating_add(q.pre_origin_reach()),
+        }
+    }
 }
 
 /// Evidence for one proposition at one materialized lasso position.
@@ -666,14 +694,26 @@ pub fn evaluate(
         return Err(OracleError::ResourceIncomplete);
     }
 
+    // The pre-origin extension (FSpec FR-092): `origin` cells with every atom
+    // false come before position 0, enough that no closed past read from an
+    // original position falls below the materialized word.
+    let origin = claim.pre_origin_reach().max(
+        fairness
+            .iter()
+            .map(Formula::pre_origin_reach)
+            .max()
+            .unwrap_or(0),
+    );
+    let selected = position
+        .checked_add(origin)
+        .ok_or(OracleError::ResourceIncomplete)?;
     let mut possible_true = false;
     let mut possible_false = false;
     let mut fair_completions = 0usize;
     for mask in 0..completions {
-        let mut cells: Vec<BTreeMap<PropositionId, bool>> = lasso
-            .cells
-            .iter()
-            .map(|cell| {
+        let mut cells: Vec<BTreeMap<PropositionId, bool>> = core::iter::repeat_with(BTreeMap::new)
+            .take(origin)
+            .chain(lasso.cells.iter().map(|cell| {
                 cell.iter()
                     .filter_map(|(id, value)| match value {
                         Evidence::False => Some((*id, false)),
@@ -681,14 +721,15 @@ pub fn evaluate(
                         Evidence::Missing | Evidence::Conflicting | Evidence::Impossible => None,
                     })
                     .collect()
-            })
+            }))
             .collect();
         for (bit, (cell, atom)) in unknown.iter().enumerate() {
-            cells[*cell].insert(*atom, (mask & (1usize << bit)) != 0);
+            cells[origin + *cell].insert(*atom, (mask & (1usize << bit)) != 0);
         }
         let word = ConcreteWord {
             cells: &cells,
-            loop_entry: lasso.loop_entry,
+            loop_entry: lasso.loop_entry + origin,
+            origin,
             limits,
         };
         let fair = fairness.iter().try_fold(true, |admitted, premise| {
@@ -704,7 +745,7 @@ pub fn evaluate(
             continue;
         }
         fair_completions += 1;
-        let value = word.eval(claim)?.at(position);
+        let value = word.eval(claim)?.at(selected);
         possible_true |= value;
         possible_false |= !value;
     }
@@ -760,6 +801,9 @@ impl Sequence {
 struct ConcreteWord<'a> {
     cells: &'a [BTreeMap<PropositionId, bool>],
     loop_entry: usize,
+    /// The index of position 0; the cells before it are the pre-origin
+    /// extension, where every atom is false.
+    origin: usize,
     limits: Limits,
 }
 
@@ -893,7 +937,14 @@ impl ConcreteWord<'_> {
             }
             let values: Vec<bool> = (0..len)
                 .map(|time| {
-                    let ceiling = upper.unwrap_or(time).min(time);
+                    // A closed window reads the pre-origin cells; an unbounded
+                    // one reads positions 0 through `time - lower` only.
+                    let Some(ceiling) = (match upper {
+                        Some(end) => Some(end.min(time)),
+                        None => time.checked_sub(self.origin),
+                    }) else {
+                        return false;
+                    };
                     for distance in lower..=ceiling {
                         if witness.at(time - distance) {
                             return true;
