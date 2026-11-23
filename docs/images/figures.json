@@ -1,0 +1,5 @@
+{
+  "here": "tl-oracle",
+  "out": "docs/images",
+  "figures": ["hero","tl-stack","pipeline","scenario-sequence"]
+}
