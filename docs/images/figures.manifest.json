@@ -1,0 +1,13 @@
+{
+  "files": [
+    "hero-light.svg",
+    "hero-dark.svg",
+    "tl-stack-light.svg",
+    "tl-stack-dark.svg",
+    "pipeline-light.svg",
+    "pipeline-dark.svg",
+    "scenario-sequence-light.svg",
+    "scenario-sequence-dark.svg"
+  ],
+  "generated_by": "ixd build"
+}
