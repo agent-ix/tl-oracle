@@ -113,6 +113,8 @@ The exhaustive and law tests are described in
 
 ## Contributing
 
+Before merging a change to a figure or to the data a figure reads, run `make figures-check`; it writes nothing and fails when a file in `docs/images` is missing, stale or orphaned, and `make figures` regenerates them. Both need `ixd`: `cargo install --locked --git https://github.com/agent-ix/ix-diagrams ix-diagrams`, or set `IXD=<path>`. Hosted CI is manual-only and does not run them.
+
 Run the three commands under Building and testing before opening a pull
 request. Changes are discussed on the [Discord](https://discord.gg/k8DVhuYBR2).
 

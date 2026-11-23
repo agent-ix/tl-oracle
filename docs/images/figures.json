@@ -1,0 +1,40 @@
+{
+  "style": "ix-docs",
+  "data": {
+    "n_formula": {"from": "enum-variants", "path": "src/lib.rs", "name": "Formula"},
+    "n_error": {"from": "enum-variants", "path": "src/lib.rs", "name": "OracleError"},
+    "n_evidence": {"from": "enum-variants", "path": "src/lib.rs", "name": "Evidence"},
+    "max_completions": {"from": "default-field", "path": "src/lib.rs", "type": "Limits", "field": "max_completions", "grouped": true}
+  },
+  "figures": [
+    {
+      "id": "hero", "width": 980, "height": 392,
+      "label": "A formula and a lasso trace go to two independent evaluators. tl-mltl, the production evaluator, returns a verdict. tl-oracle converts the formula to its own tree of {n_formula} node kinds, enumerates the completions of missing and conflicting evidence (at most {max_completions} by default), filters them by fairness, and returns an Outcome or one of its {n_error} OracleError refusals. A differential test in tl-mltl compares the two results and reports whether they agree.",
+      "items": [
+        {"k": "text", "at": [0, 148], "text": "INPUT", "role": "muted", "size": 12},
+        {"k": "box", "at": [0, 160, 232, 78], "role": "code", "title": "formula + trace", "subs": ["claim and fairness roots", "lasso with {n_evidence} evidence values"]},
+        {"k": "text", "at": [260, 12], "text": "PRODUCTION LANE", "role": "muted", "size": 12},
+        {"k": "box", "at": [260, 24, 200, 62], "role": "ink", "title": "tl-mltl", "subs": ["production evaluator"]},
+        {"k": "box", "at": [520, 24, 170, 62], "role": "model", "title": "verdict", "subs": ["production result"]},
+        {"k": "line", "points": [[116, 157], [116, 55], [257, 55]], "role": "code"},
+        {"k": "line", "points": [[460, 55], [517, 55]], "role": "ink", "weight": 2.4},
+        {"k": "text", "at": [260, 252], "text": "ORACLE LANE", "role": "muted", "size": 12},
+        {"k": "box", "at": [260, 264, 150, 62], "role": "logic", "title": "from_syntax", "subs": ["document to tree"]},
+        {"k": "box", "at": [440, 264, 200, 62], "role": "logic", "title": "evaluate", "subs": ["completions · fairness"]},
+        {"k": "box", "at": [670, 264, 150, 62], "role": "evidence", "title": "Outcome", "subs": ["verdict + counts"]},
+        {"k": "line", "points": [[116, 241], [116, 295], [257, 295]], "role": "code"},
+        {"k": "line", "points": [[410, 295], [437, 295]], "role": "logic", "weight": 2.4},
+        {"k": "line", "points": [[640, 295], [667, 295]], "role": "logic", "weight": 2.4},
+        {"k": "box", "at": [840, 130, 140, 78], "role": "logic", "title": "compare", "subs": ["differential test", "agree or differ"]},
+        {"k": "line", "points": [[690, 55], [910, 55], [910, 127]], "role": "model"},
+        {"k": "note", "at": [700, 49], "text": "verdict", "role": "model"},
+        {"k": "line", "points": [[820, 295], [910, 295], [910, 209]], "role": "evidence"},
+        {"k": "note", "at": [826, 289], "text": "Outcome", "role": "evidence"},
+        {"k": "legend", "at": [0, 372], "entries": [["code", "authored source", "box"], ["logic", "processing step", "box"], ["model", "checked document / view", "box"], ["evidence", "outcome", "box"], ["ink", "input", "box"]]}
+      ]
+    },
+    {"id": "tl-stack", "construct": {"name": "tl-stack", "here": "tl-oracle"}},
+    {"id": "pipeline", "construct": {"name": "tl-pipeline", "here": "tl-oracle"}},
+    {"id": "scenario-sequence", "construct": {"name": "tl-scenario", "here": "tl-oracle"}}
+  ]
+}
